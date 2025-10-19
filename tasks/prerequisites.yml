@@ -1,0 +1,71 @@
+### Ensure necessary  packages for the role are installed
+- name: Add Debian backports repo
+  become: true
+  ansible.builtin.apt_repository:
+    repo: "deb http://deb.debian.org/debian {{ ansible_lsb.codename }}-backports main contrib non-free"
+    filename: backports
+    state: present
+  register: backports_repo_added
+  when: ansible_distribution == 'Debian'
+
+- name: Refresh apt cache only if backports repo changed
+  become: true
+  ansible.builtin.apt:
+    update_cache: yes
+  when: backports_repo_added is changed and ansible_distribution == 'Debian'
+
+- name: Install borgbackup from backports
+  become: true
+  ansible.builtin.apt:
+    name: borgbackup
+    state: present
+    default_release: "{{ ansible_lsb.codename }}-backports"
+
+- name: Install cron from stable
+  become: true
+  ansible.builtin.apt:
+    name: cron
+    state: present
+    default_release: "{{ ansible_lsb.codename }}"
+
+- name: Ensure cron daemon is running
+  become: true
+  systemd:
+    name: cron
+    state: started
+    enabled: yes
+    daemon_reload: true
+
+
+- name: Create services directory
+  become: true
+  ansible.builtin.file:
+    path: "{{ services_base_path }}"
+    state: directory
+    owner: "{{ services_owner }}"
+    group: "{{ services_group }}"
+    mode: '770'
+
+
+### Running services discovery
+- name: Discover service directories on host
+  ansible.builtin.find:
+    paths: "{{ services_base_path }}"
+    file_type: directory
+    depth: 1
+  register: services_dirs
+
+- name: Set services_present
+  set_fact:
+    services_present: >-
+      {{ services_dirs.files
+         | map(attribute='path')
+         | map('basename')
+         | list
+         | default([]) }}
+
+
+- name: Compute to_undeploy (present but not enabled)
+  set_fact:
+    to_undeploy: "{{ services_present | difference(hostvars[inventory_hostname].enabled_services | default([])) | sort }}"
+

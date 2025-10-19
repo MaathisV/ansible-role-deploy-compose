@@ -1,0 +1,16 @@
+- name: Preview undeploy candidates (debug)
+  debug:
+    msg: "Host {{ inventory_hostname }} will undeploy: {{ to_undeploy | default([]) }}"
+
+- name: Ensure containers for {{ service_name }} are down
+  community.docker.docker_compose_v2:
+    project_src: "{{ services_base_path }}/{{ service_name }}"
+    state: absent
+    remove_orphans: true
+
+- name: Remove backup cron for {{ service_name }}
+  become: true
+  ansible.builtin.cron:
+    name: "borg backup {{ service_name }}"
+    user: root
+    state: absent

@@ -1,0 +1,17 @@
+- name: "Deploy backup script for {{ service_name }}"
+  template:
+    src: "{{ backup_script_path }}"
+    dest: "{{ services_base_path }}/{{ service_name }}/backup-{{ service_name }}.sh"
+    mode: '0700'
+
+- name: "Ensure cron job for {{ service_name }}"
+  become: true
+  cron:
+    name: "borg backup {{ service_name }}"
+    minute: "{{ backup_cron_time.split(' ')[0] }}"
+    hour: "{{ backup_cron_time.split(' ')[1] }}"
+    day: "{{ backup_cron_time.split(' ')[2] }}"
+    month: "{{ backup_cron_time.split(' ')[3] }}"
+    weekday: "{{ backup_cron_time.split(' ')[4] }}"
+    user: root
+    job: "{{ services_base_path }}/{{ service_name }}/backup-{{ service_name }}.sh >> {{ backup_logs_path }}/backup-{{ service_name }}.log 2>&1"

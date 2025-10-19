@@ -1,3 +1,45 @@
-#SPDX-License-Identifier: MIT-0
----
-# tasks file for deploy_compose2
+- include_tasks: 
+    file: prerequisites.yml
+    apply:
+      tags: [deploy, backup, undeploy]
+  tags: [deploy, backup, undeploy]
+
+- name: Undeploy disabled services already running
+  include_tasks:
+    file: undeploy.yml
+    apply:
+      tags: [undeploy]
+  loop: "{{ to_undeploy | default([]) }}"
+  loop_control:
+    loop_var: service_name
+    label: "{{ service_name }}"
+  when: to_undeploy | length > 0
+  tags: [undeploy]
+
+- include_tasks: 
+    file: networks.yml
+    apply:
+      tags: [deploy, undeploy, networks, backup]
+  tags: [deploy, undeploy, networks, backup]
+
+- name: Deploy enabled services on {{ inventory_hostname }}
+  include_tasks: 
+    file: deploy.yml
+    apply:
+      tags: [deploy]
+  loop: "{{ enabled_services | default([]) }}"
+  loop_control:
+    loop_var: service_name
+    label: "{{ service_name }}"
+  tags: [deploy]
+
+- name: Set backup strategies for enabled services  on {{ inventory_hostname }}
+  include_tasks: 
+    file: backup.yml
+    apply:
+      tags: [backup]
+  loop: "{{ enabled_services | default([]) }}"
+  loop_control:
+    loop_var: service_name
+    label: "{{ service_name }}"
+  tags: [backup]

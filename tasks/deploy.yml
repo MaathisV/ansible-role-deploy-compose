@@ -1,0 +1,46 @@
+- name: Create {{ service_name }} service directory
+  ansible.builtin.file:
+    path: "{{ services_base_path }}/{{ service_name }}"
+    state: directory
+    owner: "{{ services_owner }}"
+    group: "{{ services_group }}"
+    mode: '0755'
+
+- name: Render docker-compose.yml for {{ service_name }}
+  template:
+    src: "{{ service_name }}/docker-compose.yml"
+    dest: "{{ services_base_path }}/{{ service_name }}/docker-compose.yml"
+    mode: '0644'
+  register: compose_file
+
+- name: Render .env for {{ service_name }}
+  template:
+    src: "{{ service_name }}/.env.j2"
+    dest: "{{ services_base_path }}/{{ service_name }}/.env"
+    mode: '0600'
+  no_log: true
+  register: env_file
+  when: lookup('file', role_path + '/templates/' + service_name + '/.env.j2', errors='ignore') is not none
+
+- name: Restart {{ service_name  }} containers due to configuration changes
+  block:
+    - name: Stop {{ service_name }} container
+      community.docker.docker_compose_v2:
+        project_src: "{{ services_base_path }}/{{ service_name }}"
+        state: absent
+        pull: missing
+
+    - name: Restart {{ service_name }} container
+      community.docker.docker_compose_v2:
+        project_src: "{{ services_base_path }}/{{ service_name }}"
+        state: present
+        pull: missing
+        remove_orphans: true
+  when: compose_file.changed or env_file.changed
+
+- name: Ensure {{ service_name }} is running
+  community.docker.docker_compose_v2:
+    project_src: "{{ services_base_path }}/{{ service_name }}"
+    state: present
+    pull: missing
+    remove_orphans: true

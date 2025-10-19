@@ -1,3 +1,24 @@
-#SPDX-License-Identifier: MIT-0
----
-# defaults file for deploy_compose2
+## Docker
+services_base_path: "/services"
+services_owner: mathis
+services_group: docker
+
+timezone: "Europe/Paris"
+docker_uuid: "1000"
+docker_guid: "1000"
+
+
+
+## Backups
+borg_repo_basepath: "/Backups"
+backup_script_path: "backup.sh.j2"
+backup_logs_path: "/var/log"
+backed_paths: ["{{ services_base_path }}/{{ service_name }}"]
+
+borg_encryption: "repokey"
+borg_compression: "zstd,6"
+# Borg cron runs defaults
+backup_cron_time: "0 3 * * *"
+keep_daily: 7
+keep_weekly: 4
+keep_monthly: 1
