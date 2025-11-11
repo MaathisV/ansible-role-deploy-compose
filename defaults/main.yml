@@ -11,7 +11,7 @@ docker_guid: "1000"
 
 ## Backups
 borg_repo_basepath: "/Backups"
-backup_script_path: "backup.sh.j2"
+backup_script_path: "{{ playbook_dir }}/services/backup.sh.j2"
 backup_logs_path: "/var/log"
 backed_paths: ["{{ services_base_path }}/{{ service_name }}"]
 
