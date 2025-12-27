@@ -13,14 +13,16 @@
     mode: '0644'
   register: compose_file
 
-- name: Render .env for {{ service_name }}
-  template:
-    src: "{{ playbook_dir }}/services/{{ service_name }}/.env.j2"
-    dest: "{{ services_base_path }}/{{ service_name }}/.env"
-    mode: '0600'
-  no_log: true
-  register: env_file
-  ignore_errors: true
+- block:
+    - template:
+        src: "{{ playbook_dir }}/services/{{ service_name }}/.env.j2"
+        dest: "{{ services_base_path }}/{{ service_name }}/.env"
+        mode: '0600'
+      register: env_file
+      no_log: true
+  rescue:
+    - debug:
+        msg: ".env.j2 template does not exist for {{ service_name }}, skipping"
 
 - name: Restart {{ service_name  }} containers due to configuration changes
   block:
