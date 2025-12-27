@@ -1,13 +1,6 @@
-## Docker
-services_base_path: "/services"
 services_owner: mathis
 services_group: docker
-
-timezone: "Europe/Paris"
-docker_uuid: "1000"
-docker_guid: "1000"
-
-
+services_base_path: "/services"
 
 ## Backups
 borg_repo_basepath: "/Backups"
