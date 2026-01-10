@@ -1,17 +1,5 @@
-- name: Preview network state ollama (debug)
-  debug:
-    msg: >-
-      Ollama network will be {{
-        (enabled_services | default([]) | intersect(['ollama','karakeep']) | length > 0)
-        | ternary('present','absent')
-      }}
-
-- name: Ensure ollama networks is in the right state
+- name: Ensure {{ network_name }} network is up
   community.docker.docker_network:
-    name: ollama
+    name: "{{ network_name }}"
     driver: bridge
-    state: >-
-      {{
-        (enabled_services | default([]) | intersect(['ollama','karakeep']) | length > 0)
-        | ternary('present','absent')
-      }}
+    state: present

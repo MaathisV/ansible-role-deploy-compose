@@ -1,6 +1,9 @@
 services_owner: mathis
 services_group: docker
 services_base_path: "/services"
+docker_networks:
+  - backend
+  - frontend
 
 ## Backups
 borg_repo_basepath: "/Backups"
