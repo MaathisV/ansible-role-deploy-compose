@@ -11,8 +11,8 @@
       tags: [undeploy]
   loop: "{{ to_undeploy | default([]) }}"
   loop_control:
-    loop_var: service_name
-    label: "{{ service_name }}"
+    loop_var: service
+    label: "{{ service.name }}"
   when: to_undeploy | length > 0
   tags: [undeploy]
 
@@ -34,8 +34,8 @@
       tags: [deploy]
   loop: "{{ enabled_services | default([]) }}"
   loop_control:
-    loop_var: service_name
-    label: "{{ service_name }}"
+    loop_var: service
+    label: "{{ service.name }}"
   tags: [deploy]
 
 - name: Set backup strategies for enabled services  on {{ inventory_hostname }}
@@ -45,6 +45,6 @@
       tags: [backup]
   loop: "{{ enabled_services | default([]) }}"
   loop_control:
-    loop_var: service_name
-    label: "{{ service_name }}"
+    loop_var: service
+    label: "{{ service.name }}"
   tags: [backup]

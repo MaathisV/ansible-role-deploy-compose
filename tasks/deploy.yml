@@ -1,48 +1,48 @@
-- name: Create {{ service_name }} service directory
+- name: Create {{ service.name }} service directory
   ansible.builtin.file:
-    path: "{{ services_base_path }}/{{ service_name }}"
+    path: "{{ services_base_path }}/{{ service.name }}"
     state: directory
     owner: "{{ services_owner }}"
     group: "{{ services_group }}"
     mode: '0755'
 
-- name: Render docker-compose.yml for {{ service_name }}
+- name: Render docker-compose.yml for {{ service.name }}
   template:
-    src: "{{ playbook_dir }}/services/{{ service_name }}/docker-compose.yml"
-    dest: "{{ services_base_path }}/{{ service_name }}/docker-compose.yml"
+    src: "{{ playbook_dir }}/services/{{ service.name }}/docker-compose.yml"
+    dest: "{{ services_base_path }}/{{ service.name }}/docker-compose.yml"
     mode: '0644'
   register: compose_file
 
 - block:
     - template:
-        src: "{{ playbook_dir }}/services/{{ service_name }}/.env.j2"
-        dest: "{{ services_base_path }}/{{ service_name }}/.env"
+        src: "{{ playbook_dir }}/services/{{ service.name }}/.env.j2"
+        dest: "{{ services_base_path }}/{{ service.name }}/.env"
         mode: '0600'
       register: env_file
       no_log: true
   rescue:
     - debug:
-        msg: ".env.j2 template does not exist for {{ service_name }}, skipping"
+        msg: ".env.j2 template does not exist for {{ service.name }}, skipping"
 
-- name: Restart {{ service_name  }} containers due to configuration changes
+- name: Restart {{ service.name }} containers due to configuration changes
   block:
-    - name: Stop {{ service_name }} container
+    - name: Stop {{ service.name }} container
       community.docker.docker_compose_v2:
-        project_src: "{{ services_base_path }}/{{ service_name }}"
+        project_src: "{{ services_base_path }}/{{ service.name }}"
         state: absent
         pull: missing
 
-    - name: Restart {{ service_name }} container
+    - name: Restart {{ service.name }} container
       community.docker.docker_compose_v2:
-        project_src: "{{ services_base_path }}/{{ service_name }}"
+        project_src: "{{ services_base_path }}/{{ service.name }}"
         state: present
         pull: missing
         remove_orphans: true
   when: compose_file.changed or env_file.changed
 
-- name: Ensure {{ service_name }} is running
+- name: Ensure {{ service.name }} is running
   community.docker.docker_compose_v2:
-    project_src: "{{ services_base_path }}/{{ service_name }}"
+    project_src: "{{ services_base_path }}/{{ service.name }}"
     state: present
     pull: missing
     remove_orphans: true

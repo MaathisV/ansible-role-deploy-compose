@@ -67,5 +67,4 @@
 
 - name: Compute to_undeploy (present but not enabled)
   set_fact:
-    to_undeploy: "{{ services_present | difference(hostvars[inventory_hostname].enabled_services | default([])) | sort }}"
-
+    to_undeploy: "{{ services_present | difference(hostvars[inventory_hostname].enabled_services | map(attribute='name') | list) | sort }}"
