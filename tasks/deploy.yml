@@ -11,38 +11,29 @@
     src: "{{ playbook_dir }}/services/{{ service.name }}/docker-compose.yml"
     dest: "{{ services_base_path }}/{{ service.name }}/docker-compose.yml"
     mode: '0644'
-  register: compose_file
 
-- block:
-    - template:
-        src: "{{ playbook_dir }}/services/{{ service.name }}/.env.j2"
-        dest: "{{ services_base_path }}/{{ service.name }}/.env"
-        mode: '0600'
-      register: env_file
-      no_log: true
-  rescue:
-    - debug:
-        msg: ".env.j2 template does not exist for {{ service.name }}, skipping"
+- name: Render .env for {{ service.name }}
+  ansible.builtin.template:
+    src: "{{ playbook_dir }}/services/{{ service.name }}/.env.j2"
+    dest: "{{ services_base_path }}/{{ service.name }}/.env"
+    mode: '0600'
+  when: lookup('ansible.builtin.fileglob', playbook_dir ~ '/services/' ~ service.name ~ '/.env.j2', wantlist=True) | length > 0
+  no_log: true
 
-- name: Restart {{ service.name }} containers due to configuration changes
-  block:
-    - name: Stop {{ service.name }} container
-      community.docker.docker_compose_v2:
-        project_src: "{{ services_base_path }}/{{ service.name }}"
-        state: absent
-        pull: missing
+- name: Run pre tasks for {{ service.name }}
+  ansible.builtin.include_tasks:
+    file: "{{ playbook_dir }}/services/{{ service.name }}/pre_tasks.yml"
+  when: lookup('ansible.builtin.fileglob', playbook_dir ~ '/services/' ~ service.name ~ '/pre_tasks.yml', wantlist=True) | length > 0
 
-    - name: Restart {{ service.name }} container
-      community.docker.docker_compose_v2:
-        project_src: "{{ services_base_path }}/{{ service.name }}"
-        state: present
-        pull: missing
-        remove_orphans: true
-  when: compose_file.changed or env_file.changed
-
-- name: Ensure {{ service.name }} is running
+- name: Deploy {{ service.name }}
   community.docker.docker_compose_v2:
     project_src: "{{ services_base_path }}/{{ service.name }}"
     state: present
     pull: missing
+    recreate: auto
     remove_orphans: true
+
+- name: Run post tasks for {{ service.name }}
+  ansible.builtin.include_tasks:
+    file: "{{ playbook_dir }}/services/{{ service.name }}/post_tasks.yml"
+  when: lookup('ansible.builtin.fileglob', playbook_dir ~ '/services/' ~ service.name ~ '/post_tasks.yml', wantlist=True) | length > 0
