@@ -1,6 +1,12 @@
 - name: "Deploy backup script for {{ service.name }}"
+  vars:
+    backup_templates:
+      - "services/{{ service.name }}/backup-{{ service.name }}.sh.j2"
+      - "services/backup.sh.j2"
   template:
-    src: "{{ backup_script_path }}"
+    src: "{{ lookup('first_found', {
+      'files': backup_templates,
+      'paths': [playbook_dir]}) }}"
     dest: "{{ services_base_path }}/{{ service.name }}/backup-{{ service.name }}.sh"
     mode: '0700'
 
