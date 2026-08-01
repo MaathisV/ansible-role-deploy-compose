@@ -2,15 +2,15 @@
   debug:
     msg: "Host {{ inventory_hostname }} will undeploy: {{ to_undeploy | default([]) }}"
 
-- name: Ensure containers for {{ service.name }} are down
+- name: Ensure containers for {{ service }} are down
   community.docker.docker_compose_v2:
-    project_src: "{{ services_base_path }}/{{ service.name }}"
+    project_src: "{{ services_base_path }}/{{ service }}"
     state: absent
     remove_orphans: true
 
-- name: Remove backup cron for {{ service.name }}
+- name: Remove backup cron for {{ service }}
   become: true
   ansible.builtin.cron:
-    name: "borg backup {{ service.name }}"
+    name: "borg backup {{ service }}"
     user: root
     state: absent
